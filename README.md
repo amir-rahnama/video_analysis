@@ -90,23 +90,23 @@ Build a simple web dashboard that shows:
 
 ---
 
-## README Template You Provide:
+## README Template for the deliverable:
 
 ```markdown
- Content Performance Insights
+# Content Performance Insights
 
-# Setup
+## Setup
 [How to run your code]
 
-# Approach
+## Approach
 [What techniques did you use and why?]
 
-# Key Insights
+## Key Insights
 [What patterns did you find in the data?]
 
-# Technical Decisions
+## Technical Decisions
 [Why did you choose X over Y?]
 
-# Given More Time
+## Given More Time
 [What would you add/improve?]
 ```
