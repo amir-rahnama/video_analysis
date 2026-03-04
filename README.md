@@ -2,14 +2,14 @@
 
 ## "Content Performance Insights Dashboard"
 
-**Time estimate**: 2-3 hours
+**Time estimate**: 2-4 hours
 **Delivery**: GitHub repo with README
 
 ---
 
 ## The Problem:
 
-You’re provided a dataset of video performance metrics (CSV or JSON). Build a simple web application that:
+You’re provided a dataset of video performance metrics. Build a simple web application that:
 
 1. **Ingests and processes the data** (basic ETL)
 2. **Applies ML/analytics** to surface insights
@@ -92,7 +92,7 @@ Build a simple web dashboard that shows:
 ## README Template for the deliverable:
 
 ```markdown
-# Content Performance Insights
+# Content Performance Insights Dashboard - by Your Name
 
 ## Setup
 [How to run your code]
