@@ -21,7 +21,7 @@ You’re provided a dataset of video performance metrics. Build a simple web app
 
 ## Dataset Provided:
 
-See `sample_videos.csv`:
+See [`sample_videos.csv`](./sample_videos.csv):
 
 ```csv
 video_id,title,category,publish_date,views,watch_time_seconds,likes,comments,shares,thumbnail_style
@@ -78,14 +78,14 @@ Build a simple web dashboard that shows:
 
 ## Deliverables:
 
-**GitHub repo** with:
-- Source code
-- README with:
-  - Setup instructions
-  - Your approach/methodology
-  - Key insights you found
-  - What you'd improve with more time
-- Sample screenshots (if dashboard doesn't run easily)
+- **GitHub repo** with:
+  - Source code
+  - README with:
+    - Setup instructions
+    - Your approach/methodology
+    - Key insights you found
+    - What you'd improve with more time
+  - Sample screenshots (if dashboard doesn't run easily)
 
 ---
 
