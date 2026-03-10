@@ -157,29 +157,6 @@ export interface AnomaliesResponse {
   contamination_rate: number;
 }
 
-export interface EmbeddingPoint {
-  video_id: string;
-  title: string;
-  category: string;
-  views: number;
-  engagement_rate: number;
-  umap_x: number;
-  umap_y: number;
-}
-
-export interface EmbeddingsResponse {
-  points: EmbeddingPoint[];
-  tfidf_sample: {
-    ids: string[];
-    titles: string[];
-    matrix: number[][];
-  };
-  similar_to?: {
-    video_id: string;
-    top_similar: Array<{ video_id: string; similarity: number }>;
-  };
-}
-
 export interface Filters {
   category: string;
   thumbnail_style: string;

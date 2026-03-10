@@ -14,7 +14,6 @@ from analytics.etl import load_and_process
 from analytics.clustering import run_clustering
 from analytics.trends import run_trends
 from analytics.anomaly import run_anomaly_detection
-from analytics.embeddings import run_embeddings
 
 cache: dict = {}
 
@@ -39,7 +38,6 @@ async def lifespan(app: FastAPI):
     cache["clusters"] = _safe_json(run_clustering(df, X_scaled))
     cache["trends"] = _safe_json(run_trends(df))
     cache["anomalies"] = _safe_json(run_anomaly_detection(df, X_scaled))
-    cache["embeddings"] = _safe_json(run_embeddings(df))
     yield
     cache.clear()
 
@@ -256,38 +254,3 @@ def trends(
 def anomalies():
     """Anomaly detection results — not filter-sensitive (global model)."""
     return _safe_json(cache["anomalies"])
-
-
-@app.get("/api/embeddings")
-def embeddings(video_id: Optional[str] = Query(None)):
-    """
-    2D UMAP embedding coords + similarity.
-    If video_id is provided, return that video's top-5 similar videos.
-    """
-    df = cache["df"]
-    emb_data = cache["embeddings"]
-
-    points = []
-    for i, row in df.iterrows():
-        points.append({
-            "video_id": row["video_id"],
-            "title": row["title"],
-            "category": row["category"],
-            "views": int(row["views"]),
-            "engagement_rate": round(float(row["engagement_rate"]), 4),
-            "umap_x": round(float(emb_data["umap_x"][i]), 4),
-            "umap_y": round(float(emb_data["umap_y"][i]), 4),
-        })
-
-    result = {
-        "points": points,
-        "tfidf_sample": emb_data["tfidf_sample"],
-    }
-
-    if video_id and video_id in emb_data["similarities"]:
-        result["similar_to"] = {
-            "video_id": video_id,
-            "top_similar": emb_data["similarities"][video_id],
-        }
-
-    return _safe_json(result)

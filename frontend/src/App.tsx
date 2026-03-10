@@ -5,7 +5,6 @@ import { Overview } from './components/Overview';
 import { ClusterView } from './components/ClusterView';
 import { TrendView } from './components/TrendView';
 import { AnomalyView } from './components/AnomalyView';
-import { EmbeddingView } from './components/EmbeddingView';
 import type { Filters } from './types/api';
 
 const queryClient = new QueryClient({
@@ -17,7 +16,6 @@ const TABS = [
   { id: 'clusters', label: 'Clusters', icon: '◈' },
   { id: 'trends', label: 'Trends', icon: '∿' },
   { id: 'anomalies', label: 'Anomalies', icon: '⚑' },
-  { id: 'embeddings', label: 'Embeddings', icon: '⬡' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -103,7 +101,7 @@ function Dashboard() {
             Content Performance Insights
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            1,000 videos · 4 ML techniques · real-time filters
+            1,000 videos · 3 ML techniques · real-time filters
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -148,11 +146,10 @@ function Dashboard() {
         )}
         {activeTab === 'trends' && <TrendView filters={filters} />}
         {activeTab === 'anomalies' && <AnomalyView />}
-        {activeTab === 'embeddings' && <EmbeddingView />}
       </main>
 
       <footer className="border-t border-[#2d2d4e] px-6 py-3 text-xs text-slate-600 text-center">
-        Built with FastAPI · scikit-learn · sentence-transformers · UMAP · React · Recharts
+        Built with FastAPI · scikit-learn · UMAP · React · Recharts
       </footer>
     </div>
   );

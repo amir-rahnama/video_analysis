@@ -29,7 +29,7 @@ pip install -r requirements.txt
 uvicorn app:app --reload
 ```
 
-The first startup takes ~2–3 minutes on M4 to run all analytics pipelines (ETL → clustering → trends → anomaly detection → sentence-transformer embeddings). Results are cached in-memory — all subsequent API requests are instant.
+The first startup takes ~1–2 minutes on M4 to run all analytics pipelines (ETL → clustering → trends → anomaly detection). Results are cached in-memory — all subsequent API requests are instant.
 
 ### 2. Frontend
 
@@ -59,7 +59,7 @@ Each analytical component is built in layers: a fast, interpretable baseline fir
 
 **Layer 3 — ML features:** Log-transform of `views` and `watch_time_seconds` (both heavily right-skewed). StandardScaler normalization exported for consistent inference.
 
-### Part 2: Insights & Analysis (all 4 techniques)
+### Part 2: Insights & Analysis (3 techniques)
 
 #### Clustering
 - **Layer 1:** 2-feature K-Means on `log_views` × `engagement_rate` (k=3) as an interpretable baseline.
@@ -71,11 +71,6 @@ Each analytical component is built in layers: a fast, interpretable baseline fir
 - **Layer 2:** Per-category and per-thumbnail-style aggregation — which attributes correlate with higher shares or engagement?
 - **Layer 3:** Monthly time series of avg engagement overlaid with publish volume; day-of-week publish analysis to detect temporal patterns.
 
-#### Text Embeddings
-- **Layer 1:** TF-IDF (unigrams + bigrams) cosine similarity as a lexical baseline — no GPU required.
-- **Layer 2:** `all-MiniLM-L6-v2` via `sentence-transformers`, encoded with MPS acceleration on M4 (384-dim, L2-normalized). Semantic similarity is cosine distance via dot product.
-- **Layer 3:** UMAP 2D projection with cosine metric for a semantic scatter plot. Top-5 similar videos per video for content recommendation.
-
 #### Anomaly Detection
 - **Layer 1:** Per-metric Z-scores (threshold: |z| > 2.5) to flag single-dimension outliers.
 - **Layer 2:** Isolation Forest (200 trees, 8% contamination) on 6-feature normalized space — finds videos that are unusual across multiple dimensions simultaneously.
@@ -83,15 +78,12 @@ Each analytical component is built in layers: a fast, interpretable baseline fir
 
 ### Part 3: Dashboard
 
-5-tab React dashboard with a global filter bar (category, thumbnail style, date range):
+4-tab React dashboard with a global filter bar (category, thumbnail style, date range):
 
-| Tab | What it shows |
-|-----|--------------|
-| Overview | KPIs, view distribution by category, engagement percentiles |
-| Clusters | UMAP scatter plot, cluster filter legend, per-cluster radar + stat cards |
-| Trends | Pearson correlation heatmap, category/thumbnail bars, monthly time series, day-of-week analysis |
-| Anomalies | Isolation Forest scatter, type-filtered table with anomaly score bars |
-| Embeddings | Semantic UMAP scatter, click-to-find-similar panel, TF-IDF heatmap for top-10 videos |
+- **Overview:** KPIs, view distribution by category, engagement percentiles
+- **Clusters:** UMAP scatter plot, cluster filter legend, per-cluster radar + stat cards
+- **Trends:** Pearson correlation heatmap, category/thumbnail bars, monthly time series, day-of-week analysis
+- **Anomalies:** Isolation Forest scatter, type-filtered table with anomaly score bars
 
 ---
 
@@ -117,18 +109,13 @@ The low silhouette score reflects the nature of this dataset: synthetic generati
 ### Anomaly detection
 80 videos (8.0%) flagged by Isolation Forest — all classified as "Statistical Outlier" because the synthetic data's uniform distribution of engagement rates means no individual metric dimension produces clean Z-score extremes. In production data with organic viral events and algorithm boosts, you'd see clearly typed Breakout and Underperformer cases.
 
-### Semantic embeddings
-Title embeddings cluster by recurring keywords and themes (animals, colors, action words). TF-IDF and sentence-transformer rankings diverge for titles that share words but differ in tone — the semantic model picks up on meaning ("Magic Forest Dreams" is more similar to "Rainbow Garden Heroes" semantically than lexically).
-
 ---
 
 ## Technical Decisions
 
-**Python + FastAPI over Node.js:** The ML stack (scikit-learn, sentence-transformers, UMAP) is Python-native. FastAPI gives async routing with near-zero overhead and automatic OpenAPI docs.
+**Python + FastAPI over Node.js:** The ML stack (scikit-learn, UMAP) is Python-native. FastAPI gives async routing with near-zero overhead and automatic OpenAPI docs.
 
-**All analytics at startup, cached in-memory:** UMAP and sentence-transformers are expensive to run per-request. Computing once at startup (2–3 min on M4) then serving from memory keeps all API responses under 5ms. A production system would persist these to a cache layer (Redis) or re-run nightly.
-
-**`all-MiniLM-L6-v2` over larger models:** At 44MB and 384 dimensions it balances quality with speed. On M4 with MPS it encodes 1,000 titles in under 2 seconds. A model like `all-mpnet-base-v2` would give marginal gains at 4× the size.
+**All analytics at startup, cached in-memory:** UMAP and clustering are expensive to run per-request. Computing once at startup then serving from memory keeps all API responses fast. A production system would persist results to a cache layer (Redis) or re-run nightly.
 
 **UMAP over t-SNE:** UMAP preserves global structure better and is significantly faster at 1,000 points. The deterministic `random_state` seed makes projections reproducible.
 
@@ -146,7 +133,7 @@ Title embeddings cluster by recurring keywords and themes (animals, colors, acti
 
 3. **LLM-generated insights:** Wire the correlation and cluster data to an LLM to generate one-paragraph natural-language summaries ("Videos with bright thumbnails that feature animals in the title tend to over-perform on share rate by 15%...").
 
-4. **Persist computed results:** Save UMAP embeddings and cluster assignments to disk (Parquet/SQLite) so the server starts instantly. Add a background re-computation job on a schedule.
+4. **Persist computed results:** Save cluster assignments and trend aggregates to disk (Parquet/SQLite) so the server starts instantly. Add a background re-computation job on a schedule.
 
 5. **A/B testing framework:** Track which thumbnail styles perform better per category using Bayesian A/B testing (Beta-Binomial model) rather than simple averages.
 

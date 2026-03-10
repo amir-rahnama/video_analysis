@@ -6,7 +6,6 @@ import type {
   ClustersResponse,
   TrendsResponse,
   AnomaliesResponse,
-  EmbeddingsResponse,
   Filters,
 } from '../types/api';
 
@@ -71,15 +70,6 @@ export function useAnomalies() {
   return useQuery<AnomaliesResponse>({
     queryKey: ['anomalies'],
     queryFn: () => api.get('/api/anomalies').then(r => r.data),
-    staleTime: Infinity,
-  });
-}
-
-export function useEmbeddings(videoId?: string) {
-  return useQuery<EmbeddingsResponse>({
-    queryKey: ['embeddings', videoId],
-    queryFn: () =>
-      api.get('/api/embeddings', { params: videoId ? { video_id: videoId } : {} }).then(r => r.data),
     staleTime: Infinity,
   });
 }
