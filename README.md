@@ -41,6 +41,27 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173).
 
+### How to run
+
+**Backend** (from repo root):
+
+```bash
+cd backend
+source .venv/bin/activate   # or: .venv\Scripts\Activate.ps1 on Windows
+uvicorn app:app --reload
+```
+
+API is at [http://localhost:8000](http://localhost:8000). Health check: [http://localhost:8000/api/health](http://localhost:8000/api/health).
+
+**Frontend** (in a second terminal):
+
+```bash
+cd frontend
+npm run dev
+```
+
+Then open [http://localhost:5173](http://localhost:5173). The frontend talks to the backend on port 8000; start the backend first.
+
 ---
 
 ## Approach & Methodology
@@ -84,6 +105,21 @@ Each analytical component is built in layers: a fast, interpretable baseline fir
 - **Clusters:** UMAP scatter plot, cluster filter legend, per-cluster radar + stat cards
 - **Trends:** Pearson correlation heatmap, category/thumbnail bars, monthly time series, day-of-week analysis
 - **Anomalies:** Isolation Forest scatter, type-filtered table with anomaly score bars
+
+
+---
+
+---
+
+## Design decisions (backend modules)
+
+**`etl.py`** — We load the CSV with strict dtypes and drop rows that have nulls in views, watch time, or publish date so downstream math never sees missing or invalid numbers. All derived metrics (engagement rate, like/comment/share rates, virality score, avg watch time per view) are computed from raw counts and stored on the same DataFrame. We log-transform views and watch time, then pass a fixed set of six columns through StandardScaler so every ML step (clustering, anomaly) sees the same normalized feature space. The scaler and feature list are defined here so a single change propagates everywhere.
+
+**`clustering.py`** — We use the same six normalized features from ETL for both K-Means and UMAP so the 2D plot reflects the same structure the clusters were fit on. The number of clusters is chosen automatically via an elbow on the inertia curve (second derivative), then clamped between 3 and 6 to avoid degenerate or noisy splits. UMAP is run with Euclidean metric and a fixed seed so the scatter is reproducible. Cluster names are assigned after the fact by ranking each cluster’s median views, engagement, and watch time and applying simple rules (e.g. high reach + high engagement → "Viral Stars", low reach + high engagement → "Sleeper Hits") so the dashboard shows readable labels instead of raw IDs.
+
+**`trends.py`** — We compute a single Pearson correlation matrix over eight metrics (including virality and days since publish) and attach p-values via the t-distribution so the frontend can highlight which correlations are significant. Category and thumbnail breakdowns are plain groupby-aggregates (counts, means) so the API can reuse them when filters are applied. Monthly and day-of-week series are built from the same DataFrame so we get one consistent time axis for the dashboard. Top-performing category and thumbnail are derived by argmax on the same aggregates to keep "what works best" in one place.
+
+**`anomaly.py`** — We treat Isolation Forest as the source of truth for *whether* a video is anomalous (200 trees, 8% contamination on the same six normalized features as clustering) and use Z-scores only to *label* the type. Z-scores are computed on four interpretable metrics (views, engagement rate, avg watch time, share rate) with a 2.5 threshold so we can say "high views, low engagement" → Breakout vs "low views, high engagement" → Underperformer. The combined anomaly score is a 0–1 rescaling of the decision function so the frontend can sort and display strength consistently. All of this runs on the global dataset (no per-request refit) so results are stable and fast to serve.
 
 ---
 
@@ -136,7 +172,3 @@ The low silhouette score reflects the nature of this dataset: synthetic generati
 4. **Persist computed results:** Save cluster assignments and trend aggregates to disk (Parquet/SQLite) so the server starts instantly. Add a background re-computation job on a schedule.
 
 5. **A/B testing framework:** Track which thumbnail styles perform better per category using Bayesian A/B testing (Beta-Binomial model) rather than simple averages.
-
-6. **Authentication + multi-tenant:** Allow different content teams to upload their own CSV and see only their data.
-
-7. **Export functionality:** Download filtered tables as CSV, cluster assignments as JSON, and anomaly reports as PDF.
