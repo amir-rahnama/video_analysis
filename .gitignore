@@ -1,0 +1,16 @@
+# Backend
+backend/.venv/
+backend/__pycache__/
+backend/analytics/__pycache__/
+*.pyc
+*.pyo
+
+# Frontend (supplement; frontend has its own .gitignore)
+node_modules/
+
+# IDE / OS
+.idea/
+.DS_Store
+*.swp
+
+.venv/
